@@ -25,7 +25,7 @@ Platform::Window::~Window ()
 	destroy ();
 }
 
-void Platform::Window::run (RenderFunc renderFunc)
+void Platform::Window::run (RenderFunc renderFunc, void* userData)
 {
 	if (!window || !renderFunc)
 	{
@@ -44,7 +44,7 @@ void Platform::Window::run (RenderFunc renderFunc)
 		glfwGetFramebufferSize (window, &width, &height);
 
 		std::chrono::duration<float> deltaTime = currentTime - lastTime;
-		renderFunc (deltaTime.count(), width, height, input);
+		renderFunc (deltaTime.count(), width, height, input, userData);
 		
 		lastTime = currentTime;
 

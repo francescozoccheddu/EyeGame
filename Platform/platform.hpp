@@ -5,13 +5,6 @@ struct GLFWwindow;
 namespace Platform
 {
 
-	struct WindowSize
-	{
-		static const int dontcare;
-		int width;
-		int height;
-	};
-
 	struct Input
 	{
 		float axisX;
@@ -22,7 +15,7 @@ namespace Platform
 		float mouseY;
 	};
 
-	typedef void (*RenderFunc)(float deltaTime, int width, int height, Input input);
+	typedef void (*RenderFunc)(float deltaTime, int width, int height, Input input, void* userData);
 
 	void initialize ();
 
@@ -41,7 +34,7 @@ namespace Platform
 
 		virtual ~Window ();
 
-		void run (RenderFunc renderFunc);
+		void run (RenderFunc renderFunc, void* userData);
 
 		void requestClose ();
 
@@ -54,9 +47,6 @@ namespace Platform
 	private:
 		
 		GLFWwindow* window;
-		int swapInterval;
-		WindowSize size;
-		bool fullscreen;
 
 	};
 

@@ -7,6 +7,6 @@ out vec3 vColor;
 
 void main()
 {
-	vColor = aColor;
+	vColor = aColor + 0.8;
 	gl_Position = uProjView * vec4(aPosition, 1.0);
 }

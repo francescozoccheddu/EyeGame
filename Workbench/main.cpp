@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <string>
 #include "Camera.hpp"
+#include "EyeMesh.hpp"
 
 #define LOAD_SHADER(name, type) _TEST_createShaderFromSourceFile(R"(C:\Users\zocch\OneDrive\Projects\EyeGame\EyeGame\Workbench\)" name ".glsl", type)
 
@@ -63,7 +64,6 @@ static void cursor_pos_callback (GLFWwindow* window, double xpos, double ypos)
 	int mouseState = glfwGetMouseButton (window, GLFW_MOUSE_BUTTON_LEFT);
 	if (mouseState == GLFW_PRESS) {
 		camera.yaw += static_cast<float>(offsetX * sensitivityX * 360.0);
-		std::cout << "boh";
 	}
 	else
 	{
@@ -126,9 +126,10 @@ void run () {
 	GLuint ebo;
 	glGenBuffers (1, &ebo);
 	GLuint vbo;
+	CircularSectorMesh mesh (24);
 	glGenBuffers (1, &vbo);
 	glBindBuffer (GL_ARRAY_BUFFER, vbo);
-	glBufferData (GL_ARRAY_BUFFER, sizeof (vertices), vertices, GL_STATIC_DRAW);
+	glBufferData (GL_ARRAY_BUFFER, mesh.getBufferSize(), mesh.get(), GL_STATIC_DRAW);
 	glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, ebo);
 	glBufferData (GL_ELEMENT_ARRAY_BUFFER,
 		sizeof (indices), indices, GL_STATIC_DRAW);
@@ -141,15 +142,15 @@ void run () {
 	glLinkProgram (shaderProgram);
 	glUseProgram (shaderProgram);
 	GLint posAttrib = glGetAttribLocation (shaderProgram, "aPosition");
-	glVertexAttribPointer (posAttrib, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), 0);
+	glVertexAttribPointer (posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray (posAttrib);
 	GLint colAttrib = glGetAttribLocation (shaderProgram, "aColor");
-	glVertexAttribPointer (colAttrib, 3, GL_FLOAT, GL_FALSE, 6 * sizeof (float), (void*)(3*sizeof(float)));
+	glVertexAttribPointer (colAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray (colAttrib);
 	GLint projviewUnif = glGetUniformLocation (shaderProgram, "uProjView");
 
 	glDisable (GL_CULL_FACE);
-	glEnable (GL_DEPTH_TEST);
+	//glEnable (GL_DEPTH_TEST);
 	glDepthFunc (GL_LESS);
 
 
@@ -163,7 +164,9 @@ void run () {
 
 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor (0, 0, 0, 1);
-		glDrawElements (GL_TRIANGLES, sizeof(indices)/(sizeof(GLuint)), GL_UNSIGNED_INT, 0);
+		//glDrawElements (GL_POINTS, sizeof(indices)/(sizeof(GLuint)), GL_UNSIGNED_INT, 0);
+		//glDrawArrays (GL_POINTS, 0, sizeof (vertices) / sizeof (float) / 6);
+		glDrawArrays (GL_POINTS, 0, mesh.getVertexCount());
 
 		lastTime = currentTime;
 

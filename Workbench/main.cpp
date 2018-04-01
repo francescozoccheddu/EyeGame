@@ -120,7 +120,7 @@ void run () {
 	float * verts;
 	unsigned short * inds;
 
-	int c4dres = c4d2c ("C:/Users/zocch/Desktop/prova.txt", &vertcount, &verts, &indcount, &inds);
+	int c4dres = c4d2c ("C:/Users/zocch/Desktop/torus", &vertcount, &verts, &indcount, &inds);
 	if (c4dres)
 	{
 		std::cout << c4d2c_errstr (c4dres);
@@ -145,13 +145,13 @@ void run () {
 	glLinkProgram (shaderProgram);
 	glUseProgram (shaderProgram);
 	GLint posAttrib = glGetAttribLocation (shaderProgram, "aPosition");
-	glVertexAttribPointer (posAttrib, 2, GL_FLOAT, GL_FALSE, 0, (void*) 0);
+	glVertexAttribPointer (posAttrib, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, (void*) 0);
 	glEnableVertexAttribArray (posAttrib);
 	/*GLint colAttrib = glGetAttribLocation (shaderProgram, "aColor");
 	glVertexAttribPointer (colAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray (colAttrib);
+	glEnableVertexAttribArray (colAttrib);*/
 	GLint projviewUnif = glGetUniformLocation (shaderProgram, "uProjView");
-
+	/*
 	glDisable (GL_CULL_FACE);
 	glEnable (GL_DEPTH_TEST);
 	glDepthFunc (GL_LESS);*/
@@ -162,7 +162,7 @@ void run () {
 		auto currentTime = std::chrono::high_resolution_clock::now ();
 
 		std::chrono::duration<float> deltaTime = currentTime - lastTime;
-		//glUniformMatrix4fv (projviewUnif, 1, GL_FALSE, camera.get ());
+		glUniformMatrix4fv (projviewUnif, 1, GL_FALSE, camera.get ());
 
 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor (0, 0, 0, 1);

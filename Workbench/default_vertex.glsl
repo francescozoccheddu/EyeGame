@@ -1,12 +1,8 @@
 #version 150 core
 
-in vec3 aPosition;
-in vec3 aColor;
-uniform mat4 uProjView;
-out vec3 vColor;
+in vec2 aPosition;
 
 void main()
 {
-	vColor = aColor + 0.8;
-	gl_Position = uProjView * vec4(aPosition, 1.0);
+	gl_Position = vec4(aPosition, 0.0, 1.0);
 }

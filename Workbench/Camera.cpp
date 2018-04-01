@@ -33,7 +33,7 @@ void Camera::calculate ()
 	matYaw = glm::rotate (matYaw, glm::radians (yaw), glm::vec3 (0.0f, 0.0f,1.0f));
 	glm::mat4 rotate = matRoll * matPitch * matYaw;
 	glm::mat4 translate = glm::mat4 (1.0f);
-	translate = glm::translate (translate, glm::vec3(0.0f,-1.2f,-4.0f));
+	translate = glm::translate (translate, glm::vec3(0.0f,0.0f,-8.0f));
 	glm::mat4 view = translate * rotate;
 	float aspectRatio = viewportWidth / static_cast<float>(viewportHeight);
 	glm::mat4 projection = glm::perspective (glm::radians(fov), aspectRatio, nearPlane, farPlane);

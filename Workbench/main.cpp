@@ -120,7 +120,7 @@ void run () {
 	float * verts;
 	unsigned short * inds;
 
-	int c4dres = c4d2c ("C:/Users/zocch/Desktop/torus", &vertcount, &verts, &indcount, &inds);
+	int c4dres = c4d2c ("C:/Users/zocch/Desktop/Figure.1", &vertcount, &verts, &indcount, &inds);
 	if (c4dres)
 	{
 		std::cout << c4d2c_errstr (c4dres);

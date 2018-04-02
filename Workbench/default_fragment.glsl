@@ -1,9 +1,12 @@
-#version 150 core
+#version 130 core
 
 out vec4 outColor;
-in vec3 vColor;
+in vec3 vLight;
+in vec3 vNormal;
 
 void main()
 {
-    outColor = vec4(vColor,1.0);
+    vec3 diffuse = vec3(1.0);
+    float lambert = dot(vLight, vNormal);
+    outColor = vec4(diffuse * lambert, 1.0);
 }

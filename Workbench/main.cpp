@@ -10,7 +10,7 @@
 #include "CircularSectorMesh.hpp"
 #include "PawnRenderer.h"
 #include "Pawn.h"
-#include "C4D2C.h"
+#include "../c4d2c/C4D2C.h"
 
 #define LOAD_SHADER(name, type) _TEST_createShaderFromSourceFile(R"(C:\Users\zocch\Documents\Visual Studio 2017\Projects\EyeGame\EyeGame\Workbench\)" name ".glsl", type)
 
@@ -120,7 +120,7 @@ void run () {
 	float * verts;
 	unsigned short * inds;
 
-	int c4dres = c4d2c ("C:/Users/zocch/Desktop/Figure.1", &vertcount, &verts, &indcount, &inds);
+	int c4dres = c4d2c ("../c4d/dummy", &vertcount, &verts, &indcount, &inds);
 	if (c4dres)
 	{
 		std::cout << c4d2c_errstr (c4dres);

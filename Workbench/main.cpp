@@ -145,16 +145,17 @@ void run () {
 	glLinkProgram (shaderProgram);
 	glUseProgram (shaderProgram);
 	GLint posAttrib = glGetAttribLocation (shaderProgram, "aPosition");
-	glVertexAttribPointer (posAttrib, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, (void*) 0);
+	glVertexAttribPointer (posAttrib, 3, GL_FLOAT, GL_FALSE, sizeof(float) *6, (void*) (sizeof (float) * 0));
 	glEnableVertexAttribArray (posAttrib);
-	/*GLint colAttrib = glGetAttribLocation (shaderProgram, "aColor");
-	glVertexAttribPointer (colAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray (colAttrib);*/
+	GLint normAttrib = glGetAttribLocation (shaderProgram, "aNormal");
+	glVertexAttribPointer (normAttrib, 3, GL_FLOAT, GL_FALSE, sizeof (float) * 6, (void*) (sizeof(float) * 3));
+	glEnableVertexAttribArray (normAttrib);
 	GLint projviewUnif = glGetUniformLocation (shaderProgram, "uProjView");
-	/*
+	GLint lightposUnif = glGetUniformLocation (shaderProgram, "uLightPos");
+	
 	glDisable (GL_CULL_FACE);
 	glEnable (GL_DEPTH_TEST);
-	glDepthFunc (GL_LESS);*/
+	glDepthFunc (GL_LESS);
 
 	auto lastTime = std::chrono::high_resolution_clock::now ();
 	while (window && !glfwWindowShouldClose (window))
@@ -163,15 +164,11 @@ void run () {
 
 		std::chrono::duration<float> deltaTime = currentTime - lastTime;
 		glUniformMatrix4fv (projviewUnif, 1, GL_FALSE, camera.get ());
+		glUniform3f (lightposUnif, 0.0f, 2.0f, 8.0f);
 
 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor (0, 0, 0, 1);
 		glDrawElements (GL_TRIANGLES, indcount, GL_UNSIGNED_SHORT, 0);
-		//glDrawArrays (GL_TRIANGLES, 0, 3);
-		//glDrawArrays (GL_POINTS, 0, mesh.getVertexCount(1));
-		//glDrawArrays (GL_LINES, 0, mesh.getVertexCount());
-
-
 
 		lastTime = currentTime;
 

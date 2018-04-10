@@ -2,45 +2,64 @@
 #include <glm.hpp>
 #include <mat4x4.hpp>
 #include <gtc/matrix_transform.hpp>
+#include <gtc/quaternion.hpp>
 #include <gtc/type_ptr.hpp>
 
-#include <iostream>
-
-
-
-Camera::Camera () : viewportWidth{ 1 }, viewportHeight{ 1 }, 
-					roll{ 0 }, pitch{ 0 }, yaw{0},
-					length { 1.0f }, fov{ 45.0f }, target ()
+void Camera::update ()
 {
-
-}
-
-
-Camera::~Camera ()
-{
-}
-
-
-void Camera::calculate ()
-{
-	constexpr float nearPlane = 1.0f;
-	constexpr float farPlane = 10.0f;
-	glm::mat4 matRoll = glm::mat4 (1.0f);
-	glm::mat4 matPitch = glm::mat4 (1.0f);
-	glm::mat4 matYaw = glm::mat4 (1.0f);
-	matRoll = glm::rotate (matRoll, glm::radians(roll), glm::vec3 (1.0f, 0.0f, 0.0f));
-	matPitch = glm::rotate (matPitch, glm::radians (pitch), glm::vec3 (0.0f, 1.0f, 0.0f));
-	matYaw = glm::rotate (matYaw, glm::radians (yaw), glm::vec3 (0.0f, 0.0f,1.0f));
-	glm::mat4 rotate = matRoll * matPitch * matYaw;
-	glm::mat4 translate = glm::mat4 (1.0f);
-	translate = glm::translate (translate, glm::vec3(0.0f,0.0f,-8.0f));
-	glm::mat4 view = translate * rotate;
 	float aspectRatio = viewportWidth / static_cast<float>(viewportHeight);
 	glm::mat4 projection = glm::perspective (glm::radians(fov), aspectRatio, nearPlane, farPlane);
+	glm::mat4 view = glm::lookAt (position, position + forward, up);
 	combined = projection * view;
 }
 
-const float * Camera::get ()
+void Camera::move (glm::vec3 direction)
 {
-	return glm::value_ptr(combined);
+	position += direction.x * getRight ();
+	position += direction.y * getUp ();
+	position += direction.z * getForward ();
+}
+
+void Camera::turn (float angle)
+{
+	rotate (getUp(), angle);
+}
+
+void Camera::lookUp (float angle)
+{
+	rotate (getRight (), angle);
+}
+
+void Camera::tilt (float angle)
+{
+	rotate(getForward(),angle);
+}
+
+glm::vec3 Camera::getUp ()
+{
+	return up;
+}
+
+glm::vec3 Camera::getForward ()
+{
+	return forward;
+}
+
+glm::vec3 Camera::getRight ()
+{
+	glm::vec3 cross = glm::cross (forward, up);
+	return cross;
+}
+
+const float * Camera::ptr ()
+{
+	return glm::value_ptr (combined);
+}
+
+void Camera::rotate (glm::vec3 axis, float angle)
+{
+	glm::quat rot{};
+	rot = glm::rotate (rot, angle, axis);
+	forward = rot * forward;
+	up = rot * up;
 }

@@ -10,6 +10,9 @@
 #include "CircularSectorMesh.hpp"
 #include "PawnRenderer.h"
 #include "Pawn.h"
+#include <glm.hpp>
+#include <vec3.hpp>
+#include <gtc/type_ptr.hpp>
 #include "../c4d2c/C4D2C.h"
 
 #define LOAD_SHADER(name, type) _TEST_createShaderFromSourceFile(R"(C:\Users\zocch\Documents\Visual Studio 2017\Projects\EyeGame\EyeGame\Workbench\)" name ".glsl", type)
@@ -44,7 +47,7 @@ GLuint _TEST_createShaderFromSourceFile (const char * filename, GLenum shaderTyp
 	std::ifstream file;
 	file.open (filename);
 	file.seekg (0, std::ios::end);
-	size_t size = static_cast<size_t>( file.tellg ());
+	size_t size = static_cast<size_t>(file.tellg ());
 	std::string buffer (size, ' ');
 	file.seekg (0);
 	file.read (&buffer[0], size);
@@ -54,9 +57,13 @@ GLuint _TEST_createShaderFromSourceFile (const char * filename, GLenum shaderTyp
 Camera camera;
 double lastMouseY;
 double lastMouseX;
-constexpr double sensitivityX = 0.001f;
-constexpr double sensitivityY = 0.001f;
+constexpr double sensitivityX = 0.0005f;
+constexpr double sensitivityY = 0.0005f;
 constexpr float maxRoll = 80.0f;
+
+glm::vec3 light;
+
+bool firstMouseCallback;
 
 static void cursor_pos_callback (GLFWwindow* window, double xpos, double ypos)
 {
@@ -64,25 +71,30 @@ static void cursor_pos_callback (GLFWwindow* window, double xpos, double ypos)
 	double offsetY = ypos - lastMouseY;
 	lastMouseX = xpos;
 	lastMouseY = ypos;
-	int mouseState = glfwGetMouseButton (window, GLFW_MOUSE_BUTTON_LEFT);
-	if (mouseState == GLFW_PRESS) {
-		camera.yaw += static_cast<float>(offsetX * sensitivityX * 360.0);
-	}
-	else
+	if (!firstMouseCallback)
 	{
-		camera.pitch += static_cast<float>(offsetX * sensitivityX * 360.0);
+		float turn = -static_cast<float>(offsetX * sensitivityX * 360.0);
+		float lookUp = -static_cast<float>(offsetY * sensitivityY * 360.0);
+		camera.turn (glm::radians (turn));
+		camera.lookUp (glm::radians (lookUp));
 	}
-	camera.roll = glm::clamp<float>(camera.roll + static_cast<float>(offsetY * sensitivityY * 360.0), -maxRoll, maxRoll);
-	camera.calculate ();
+	firstMouseCallback = false;
 }
 
+static void mouse_button_callback (GLFWwindow* window, int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+	{
+		light = camera.position;
+	}
+}
 
 void run ();
 
 
 int main ()
 {
-	try 
+	try
 	{
 		run ();
 	}
@@ -93,24 +105,34 @@ int main ()
 	return 0;
 }
 
-void run () {
+void run ()
+{
 	glfwInit ();
-	GLFWwindow *window = glfwCreateWindow (640, 480, "Hello World", NULL, NULL);
+	GLFWwindow *window = glfwCreateWindow (640, 480, "Giancarlo Crispazzi", NULL, NULL);
 	if (!window)
 	{
 		throw std::runtime_error ("Failed to create window");
 	}
+
+	firstMouseCallback = true;
 	glfwSetInputMode (window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback (window, &cursor_pos_callback);
+	glfwSetMouseButtonCallback (window, mouse_button_callback);
 
 	glfwMakeContextCurrent (window);
 
 	glfwSwapInterval (2);
 
-	if (!gladLoadGLLoader ((GLADloadproc)glfwGetProcAddress)) {
+	if (!gladLoadGLLoader ((GLADloadproc)glfwGetProcAddress))
+	{
 		throw std::runtime_error ("Failed to load OpenGL");
 	}
-	camera.calculate ();
+	camera.fov = 60.0f;
+	camera.farPlane = 100.0f;
+	camera.nearPlane = 1.0f;
+	camera.viewportHeight = 480;
+	camera.viewportWidth = 640;
+	camera.position = { 0.0f,2.0f,-15.0f };
 
 	GLuint vao;
 	glGenVertexArrays (1, &vao);
@@ -132,9 +154,9 @@ void run () {
 	GLuint vbo;
 	glGenBuffers (1, &vbo);
 	glBindBuffer (GL_ARRAY_BUFFER, vbo);
-	glBufferData (GL_ARRAY_BUFFER, vertcount * sizeof(float), verts, GL_STATIC_DRAW);
+	glBufferData (GL_ARRAY_BUFFER, vertcount * sizeof (float), verts, GL_STATIC_DRAW);
 	glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData (GL_ELEMENT_ARRAY_BUFFER, indcount * sizeof(unsigned short), inds, GL_STATIC_DRAW);
+	glBufferData (GL_ELEMENT_ARRAY_BUFFER, indcount * sizeof (unsigned short), inds, GL_STATIC_DRAW);
 
 	GLuint vs = LOAD_SHADER ("default_vertex", GL_VERTEX_SHADER);
 	GLuint fs = LOAD_SHADER ("default_fragment", GL_FRAGMENT_SHADER);
@@ -145,14 +167,14 @@ void run () {
 	glLinkProgram (shaderProgram);
 	glUseProgram (shaderProgram);
 	GLint posAttrib = glGetAttribLocation (shaderProgram, "aPosition");
-	glVertexAttribPointer (posAttrib, 3, GL_FLOAT, GL_FALSE, sizeof(float) *6, (void*) (sizeof (float) * 0));
+	glVertexAttribPointer (posAttrib, 3, GL_FLOAT, GL_FALSE, sizeof (float) * 6, (void*)(sizeof (float) * 0));
 	glEnableVertexAttribArray (posAttrib);
 	GLint normAttrib = glGetAttribLocation (shaderProgram, "aNormal");
-	glVertexAttribPointer (normAttrib, 3, GL_FLOAT, GL_FALSE, sizeof (float) * 6, (void*) (sizeof(float) * 3));
+	glVertexAttribPointer (normAttrib, 3, GL_FLOAT, GL_FALSE, sizeof (float) * 6, (void*)(sizeof (float) * 3));
 	glEnableVertexAttribArray (normAttrib);
 	GLint projviewUnif = glGetUniformLocation (shaderProgram, "uProjView");
 	GLint lightposUnif = glGetUniformLocation (shaderProgram, "uLightPos");
-	
+
 	glDisable (GL_CULL_FACE);
 	glEnable (GL_DEPTH_TEST);
 	glDepthFunc (GL_LESS);
@@ -163,8 +185,35 @@ void run () {
 		auto currentTime = std::chrono::high_resolution_clock::now ();
 
 		std::chrono::duration<float> deltaTime = currentTime - lastTime;
-		glUniformMatrix4fv (projviewUnif, 1, GL_FALSE, camera.get ());
-		glUniform3f (lightposUnif, 0.0f, 2.0f, 8.0f);
+
+		{
+			glm::vec3 direction{ 0.0f,0.0f,0.0f };
+			float speed = 10.0f;
+
+			if (glfwGetKey (window, GLFW_KEY_W))
+			{
+				direction += glm::vec3{ 0.0f, 0.0f, 1.0f };
+			}
+			if (glfwGetKey (window, GLFW_KEY_S))
+			{
+				direction += glm::vec3{ 0.0f, 0.0f, -1.0f };
+			}
+			if (glfwGetKey (window, GLFW_KEY_D))
+			{
+				direction += glm::vec3{ 1.0f, 0.0f, 0.0f };
+			}
+			if (glfwGetKey (window, GLFW_KEY_A))
+			{
+				direction += glm::vec3{ -1.0f, 0.0f, 0.0f };
+			}
+
+			camera.move (direction * deltaTime.count () * speed);
+		}
+
+		camera.update ();
+
+		glUniformMatrix4fv (projviewUnif, 1, GL_FALSE, camera.ptr ());
+		glUniform3fv (lightposUnif, 1, glm::value_ptr (light));
 
 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor (0, 0, 0, 1);

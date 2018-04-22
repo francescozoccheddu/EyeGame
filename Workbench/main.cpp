@@ -12,6 +12,7 @@
 #include <glm/glm.hpp>
 #include <glm/vec3.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <algorithm>
 #include "../c4d2c/C4D2C.h"
 
 #define LOAD_SHADER(name, type) _TEST_createShaderFromSourceFile(R"(C:\Users\zocch\Documents\Visual Studio 2017\Projects\EyeGame\EyeGame\Workbench\)" name ".glsl", type)
@@ -54,18 +55,25 @@ GLuint _TEST_createShaderFromSourceFile (const char * filename, GLenum shaderTyp
 }
 
 Camera::CachedCombined camera;
-constexpr double sensitivityX = 0.0005f;
-constexpr double sensitivityY = 0.0005f;
-constexpr float maxRoll = 80.0f;
-
 glm::vec3 light;
 
 static void cursor_pos_callback (GLFWwindow* window, double xpos, double ypos)
 {
-	camera.view.turn = xpos * sensitivityX / M_PI;
+	static constexpr double sensitivityX = 0.005f;
+	static constexpr double sensitivityY = 0.005f;
+	camera.view.turn = -xpos * sensitivityX / M_PI;
 	camera.view.look_up = ypos * sensitivityY / M_PI;
 	camera.view.clamp_rotation_angles ();
 	camera.view.update_cache ();
+}
+
+static void scroll_callback (GLFWwindow* window, double xoffset, double yoffset)
+{
+	static constexpr float sensitivity = 0.05f;
+	static double last_y_offset = 0.0f;
+	float fov = camera.projection.fov + static_cast<float>(last_y_offset - yoffset) * sensitivity;
+	camera.projection.fov = std::min (std::max (fov, glm::radians (50.0f)), glm::radians (120.0f));
+	camera.projection.update_cache ();
 }
 
 static void mouse_button_callback (GLFWwindow* window, int button, int action, int mods)
@@ -103,7 +111,8 @@ void run ()
 
 	glfwSetInputMode (window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback (window, &cursor_pos_callback);
-	glfwSetMouseButtonCallback (window, mouse_button_callback);
+	glfwSetScrollCallback (window, &scroll_callback);
+	glfwSetMouseButtonCallback (window, &mouse_button_callback);
 
 	glfwMakeContextCurrent (window);
 
@@ -179,6 +188,11 @@ void run ()
 			glm::vec3 direction{ 0.0f,0.0f,0.0f };
 			float speed = 10.0f;
 
+			if (glfwGetKey (window, GLFW_KEY_LEFT_SHIFT))
+			{
+				speed *= 2.0f;
+			}
+
 			if (glfwGetKey (window, GLFW_KEY_W))
 			{
 				direction += glm::vec3{ 0.0f, 0.0f, 1.0f };
@@ -194,6 +208,10 @@ void run ()
 			if (glfwGetKey (window, GLFW_KEY_A))
 			{
 				direction += glm::vec3{ -1.0f, 0.0f, 0.0f };
+			}
+			if (glfwGetKey (window, GLFW_KEY_SPACE))
+			{
+				direction += glm::vec3{ 0.0f, 1.0f, 0.0f };
 			}
 
 			camera.view.move_towards_cached_dirs (direction * deltaTime.count () * speed);

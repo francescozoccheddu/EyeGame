@@ -5,11 +5,16 @@
 #include <gtc/quaternion.hpp>
 #include <gtc/type_ptr.hpp>
 
+
+Camera::Camera (glm::vec3 _forward, glm::vec3 _up) : unr_forward{ _forward }, unr_up{ _up }
+{}
+
 void Camera::update ()
 {
 	float aspectRatio = viewportWidth / static_cast<float>(viewportHeight);
-	glm::mat4 projection = glm::perspective (glm::radians(fov), aspectRatio, nearPlane, farPlane);
-	glm::mat4 view = glm::lookAt (position, position + forward, up);
+	glm::mat4 projection = glm::perspective (glm::radians (fov), aspectRatio, nearPlane, farPlane);
+	glm::quat rot{ glm::vec3{lookUpAngle, turnAngle, tiltAngle } };
+	glm::mat4 view = glm::lookAt (position, position + rot * forward, rot * up);
 	combined = projection * view;
 }
 
@@ -22,17 +27,17 @@ void Camera::move (glm::vec3 direction)
 
 void Camera::turn (float angle)
 {
-	rotate (getUp(), angle);
+	turnAngle += angle;
 }
 
 void Camera::lookUp (float angle)
 {
-	rotate (getRight (), angle);
+	lookUpAngle += angle;
 }
 
 void Camera::tilt (float angle)
 {
-	rotate(getForward(),angle);
+	tiltAngle += angle;
 }
 
 glm::vec3 Camera::getUp ()
@@ -56,10 +61,6 @@ const float * Camera::ptr ()
 	return glm::value_ptr (combined);
 }
 
-void Camera::rotate (glm::vec3 axis, float angle)
-{
-	glm::quat rot{};
-	rot = glm::rotate (rot, angle, axis);
-	forward = rot * forward;
-	up = rot * up;
-}
+const glm::vec3 def_forward{ 0.0f,0.0f,1.0f };
+const glm::vec3 def_up{ 0.0f,1.0f,0.0f };
+

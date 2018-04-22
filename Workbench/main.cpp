@@ -1,18 +1,17 @@
 #include <stdexcept>
 #include <chrono>
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
-#include "Camera.hpp"
-#include "CircularSectorMesh.hpp"
-#include "PawnRenderer.h"
-#include "Pawn.h"
-#include <glm.hpp>
-#include <vec3.hpp>
-#include <gtc/type_ptr.hpp>
+#include "Camera/Combined.hpp"
+#include <glm/glm.hpp>
+#include <glm/vec3.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "../c4d2c/C4D2C.h"
 
 #define LOAD_SHADER(name, type) _TEST_createShaderFromSourceFile(R"(C:\Users\zocch\Documents\Visual Studio 2017\Projects\EyeGame\EyeGame\Workbench\)" name ".glsl", type)
@@ -54,38 +53,26 @@ GLuint _TEST_createShaderFromSourceFile (const char * filename, GLenum shaderTyp
 	return createShaderFromSource (buffer.data (), shaderType);
 }
 
-Camera camera;
-double lastMouseY;
-double lastMouseX;
+Camera::CachedCombined camera;
 constexpr double sensitivityX = 0.0005f;
 constexpr double sensitivityY = 0.0005f;
 constexpr float maxRoll = 80.0f;
 
 glm::vec3 light;
 
-bool firstMouseCallback;
-
 static void cursor_pos_callback (GLFWwindow* window, double xpos, double ypos)
 {
-	double offsetX = xpos - lastMouseX;
-	double offsetY = ypos - lastMouseY;
-	lastMouseX = xpos;
-	lastMouseY = ypos;
-	if (!firstMouseCallback)
-	{
-		float turn = -static_cast<float>(offsetX * sensitivityX * 360.0);
-		float lookUp = -static_cast<float>(offsetY * sensitivityY * 360.0);
-		camera.turn (glm::radians (turn));
-		camera.lookUp (glm::radians (lookUp));
-	}
-	firstMouseCallback = false;
+	camera.view.turn = xpos * sensitivityX / M_PI;
+	camera.view.look_up = ypos * sensitivityY / M_PI;
+	camera.view.clamp_rotation_angles ();
+	camera.view.update_cache ();
 }
 
 static void mouse_button_callback (GLFWwindow* window, int button, int action, int mods)
 {
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
 	{
-		light = camera.position;
+		light = camera.view.position;
 	}
 }
 
@@ -114,7 +101,6 @@ void run ()
 		throw std::runtime_error ("Failed to create window");
 	}
 
-	firstMouseCallback = true;
 	glfwSetInputMode (window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback (window, &cursor_pos_callback);
 	glfwSetMouseButtonCallback (window, mouse_button_callback);
@@ -127,12 +113,15 @@ void run ()
 	{
 		throw std::runtime_error ("Failed to load OpenGL");
 	}
-	camera.fov = 60.0f;
-	camera.farPlane = 100.0f;
-	camera.nearPlane = 1.0f;
-	camera.viewportHeight = 480;
-	camera.viewportWidth = 640;
-	camera.position = { 0.0f,2.0f,-15.0f };
+
+	camera.projection.fov = glm::radians (90.0f);
+	camera.projection.far_plane = 100.0f;
+	camera.projection.near_plane = 1.0f;
+	camera.projection.set_aspect (640, 480);
+	camera.projection.update_cache ();
+
+	camera.view.position = { 0.0f,2.0f,-15.0f };
+	camera.view.update_cache ();
 
 	GLuint vao;
 	glGenVertexArrays (1, &vao);
@@ -207,12 +196,13 @@ void run ()
 				direction += glm::vec3{ -1.0f, 0.0f, 0.0f };
 			}
 
-			camera.move (direction * deltaTime.count () * speed);
+			camera.view.move_towards_cached_dirs (direction * deltaTime.count () * speed);
+			camera.view.update_cache ();
 		}
 
-		camera.update ();
+		camera.update_cache ();
 
-		glUniformMatrix4fv (projviewUnif, 1, GL_FALSE, camera.ptr ());
+		glUniformMatrix4fv (projviewUnif, 1, GL_FALSE, camera.get_cache_ptr ());
 		glUniform3fv (lightposUnif, 1, glm::value_ptr (light));
 
 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
